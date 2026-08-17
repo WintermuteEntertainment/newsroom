@@ -20,9 +20,22 @@ The digest replaces your new tab page, and the toolbar icon opens the same list 
 
 Right-click the icon → Options, or the *Settings* link on either surface.
 
-- **Digest server** — which instance to read. Defaults to `http://127.0.0.1:8767`.
-  Point it at any instance URL to read a server elsewhere (https hosts are covered by the
-  manifest's `https://*/*` permission).
+- **Digest server** — which instance to read. Defaults to `http://127.0.0.1:8767`, which
+  works out of the box against a newsroom server on the same machine.
+
+  To read an instance on another host, add it to `host_permissions` in
+  `manifest.chrome.json` *and* `manifest.firefox.json`, then rebuild:
+
+  ```json
+  "host_permissions": ["https://newsroom.example.com/*", "http://localhost/*", "http://127.0.0.1/*"]
+  ```
+
+  Setting the URL in Options alone is not enough. The extension reads the digest with a
+  privileged cross-origin request, and the browser only grants that for hosts named in the
+  manifest — the server sends no CORS headers. A broad `https://*/*` pattern does *not*
+  work as a substitute: Firefox treats it as an opt-in "all sites" permission and, even
+  once granted, still refused the request in testing (Firefox 153), leaving the digest
+  blank with a CORS error in the console.
 - **Story counts** — separately for the popup and the new tab page.
 
 ## Refresh
