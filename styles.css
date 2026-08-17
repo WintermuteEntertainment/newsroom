@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink:#1f2521; --muted:#68716a; --paper:#f5f2ea; --line:#d9d5c9; --accent:#d95035; --dark:#243b35;
+  --panel-bg:#fbf9f3; --scan-bg:#eef0e8; --notice-bg:#f2dfd6; --notice-ink:#783323; --warn:#8a4a12;
+  --meter-bg:#dedbd0; --chip-bg:#e4e8df; --chip-ink:#34443d; --verify:#8b9186;
+}
+/* Dark mode is a plain CSS-variable swap (toggled in the settings panel, applied via the
+   inline <script> in <head> so there's no light-theme flash on load) -- every color used
+   anywhere on the page routes through one of these, so no other rule below needs to know
+   dark mode exists. */
+:root[data-theme="dark"] {
+  --ink:#e8e6de; --muted:#98a196; --paper:#141815; --line:#2c332e; --accent:#ff7a56; --dark:#3f5c50;
+  --panel-bg:#1b201c; --scan-bg:#1e2a22; --notice-bg:#3a2018; --notice-ink:#ffb59e; --warn:#e2a15c;
+  --meter-bg:#333b34; --chip-bg:#26302a; --chip-ink:#c9d4c7; --verify:#71786f;
+}
+:root[data-theme="slate"] {
+  --ink:#182430; --muted:#5f7180; --paper:#eef1f4; --line:#cfd8de; --accent:#2f6fed; --dark:#1c3a57;
+  --panel-bg:#f7f9fb; --scan-bg:#e6ebf0; --notice-bg:#dbe7fb; --notice-ink:#1d3f7a; --warn:#a15d1f;
+  --meter-bg:#d7dee3; --chip-bg:#dde4ea; --chip-ink:#233240; --verify:#8494a1;
+}
+:root[data-theme="sepia"] {
+  --ink:#3a2c1a; --muted:#8a7455; --paper:#f1e6cf; --line:#ddc9a3; --accent:#b5432b; --dark:#4a3820;
+  --panel-bg:#f8f0dd; --scan-bg:#e8dbb8; --notice-bg:#e6cbb0; --notice-ink:#6e2c1a; --warn:#8a5a1a;
+  --meter-bg:#ddc9a3; --chip-bg:#e4d3ab; --chip-ink:#4a3820; --verify:#a3906d;
+}
+/* Custom themes only ever set the 6 vars above this line (via inline style, from the settings
+   panel's 6 color pickers) -- asking for 6 quick picks instead of 15 is the whole point of
+   "customize quickly". These derive the other 9 automatically via color-mix(), so a custom
+   palette never ships with unstyled/mismatched chips, notices, or warnings. */
+:root[data-theme="custom"] {
+  --panel-bg: color-mix(in srgb, var(--paper) 90%, white 10%);
+  --scan-bg: color-mix(in srgb, var(--paper) 88%, var(--dark) 12%);
+  --notice-bg: color-mix(in srgb, var(--accent) 15%, var(--paper) 85%);
+  --notice-ink: color-mix(in srgb, var(--accent) 55%, black 45%);
+  --warn: color-mix(in srgb, var(--accent) 70%, var(--ink) 30%);
+  --meter-bg: color-mix(in srgb, var(--paper) 82%, var(--ink) 18%);
+  --chip-bg: color-mix(in srgb, var(--paper) 85%, var(--dark) 15%);
+  --chip-ink: var(--dark);
+  --verify: color-mix(in srgb, var(--muted) 80%, var(--paper) 20%);
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:Manrope,system-ui,sans-serif; }
+main { max-width:1120px; margin:0 auto; padding:32px 30px 80px; }
+.masthead { border-top:7px solid var(--dark); border-bottom:1px solid var(--line); padding:20px 0 18px; }
+.report-meta,.story-topline,.source-label,.search span { font:500 11px/1.25 "DM Mono",monospace; letter-spacing:.09em; text-transform:uppercase; }
+/* Empty until the stamp resolves, so the separator dot between meta spans does not appear
+   next to blank space on load or when no timestamp is available. */
+.refreshed:empty { display:none; }
+.refreshed { color:var(--accent); cursor:help; }
+.headline-row { display:flex; justify-content:space-between; gap:24px; align-items:end; }
+h1 { font:normal clamp(54px,9vw,98px)/.82 "DM Serif Display",Georgia,serif; letter-spacing:-.06em; margin:0; }
+.dek { max-width:520px; margin:18px 0 0; color:var(--muted); font-size:15px; line-height:1.55; }
+button { border:0; background:var(--dark); color:#fff; cursor:pointer; font:600 13px Manrope,sans-serif; padding:13px 17px; border-radius:2px; white-space:nowrap; transition:background .2s, transform .2s; }
+button:hover { background:var(--accent); transform:translateY(-1px); } button:disabled { opacity:.6; cursor:wait; transform:none; }
+.support-link { display:inline-flex; align-items:center; gap:6px; background:transparent; color:var(--accent); border:1px solid var(--accent); cursor:pointer; font:600 13px Manrope,sans-serif; padding:12px 16px; border-radius:2px; white-space:nowrap; text-decoration:none; transition:background .2s, color .2s, transform .2s; }
+.support-link:hover { background:var(--accent); color:#fff; transform:translateY(-1px); }
+.report-meta { display:flex; flex-wrap:wrap; gap:16px 28px; color:var(--muted); margin-top:28px; }
+.report-meta span:first-child { color:var(--ink); }
+
+.about { margin-top:22px; border:1px solid var(--line); background:var(--panel-bg); }
+.about summary { cursor:pointer; padding:14px 18px; font:600 13px Manrope,sans-serif; color:var(--dark); list-style:none; display:flex; align-items:center; gap:8px; }
+.about summary::before { content:"→"; color:var(--accent); transition:transform .15s; }
+.about[open] summary::before { transform:rotate(90deg); }
+.about-body { padding:2px 18px 20px; max-width:760px; }
+.about-body p { color:var(--ink); font-size:14px; line-height:1.65; margin:0 0 14px; }
+.about-body p:last-child { margin-bottom:0; }
+.about-body strong { color:var(--dark); }
+
+.scan-debug { margin-top:18px; padding:14px 16px; background:var(--scan-bg); border-left:4px solid var(--dark); font:400 12px/1.6 "DM Mono",monospace; color:var(--muted); }
+.scan-debug p { margin:0 0 6px; }
+.scan-debug p:last-child { margin-bottom:0; }
+.scan-sources { word-break:break-word; }
+.scan-warning { color:var(--warn); }
+
+.controls { display:flex; justify-content:space-between; align-items:end; gap:20px; padding:25px 0 15px; border-bottom:1px solid var(--line); }
+.search { display:grid; gap:8px; color:var(--muted); } input { width:min(360px,75vw); border:0; border-bottom:1px solid var(--ink); background:transparent; padding:7px 0; outline:none; font:16px Manrope,sans-serif; } input:focus { border-color:var(--accent); }
+#result-count { color:var(--muted); font-size:13px; margin:0 0 8px; }
+.notice { margin:22px 0; padding:14px 16px; color:var(--notice-ink); background:var(--notice-bg); border-left:4px solid var(--accent); font-size:14px; }
+.story { display:grid; grid-template-columns:72px minmax(0,1fr); gap:20px; border-bottom:1px solid var(--line); padding:30px 0 32px; }
+.rank { color:var(--accent); font:normal 32px/1 "DM Serif Display",serif; }
+.story-topline { display:flex; gap:14px; color:var(--muted); } .coverage { color:var(--dark); font-weight:500; }
+h2 { font:normal clamp(26px,3.2vw,43px)/1.04 "DM Serif Display",Georgia,serif; letter-spacing:-.035em; margin:9px 0 15px; } h2 a { color:inherit; text-decoration:none; } h2 a:hover { color:var(--accent); }
+.meter { height:3px; max-width:420px; background:var(--meter-bg); margin-bottom:18px; }.meter i { display:block; height:100%; background:var(--accent); }
+.snippet { max-width:780px; font-size:15px; line-height:1.65; margin:0 0 21px; }.sources { display:flex; align-items:center; flex-wrap:wrap; gap:9px; }.source-label { color:var(--muted); margin-right:3px; }.voice-sources { display:flex; flex-wrap:wrap; gap:6px; }.chip { background:var(--chip-bg); color:var(--chip-ink); border-radius:999px; padding:4px 9px; font-size:11px; font-weight:700; text-decoration:none; display:inline-block; transition:background .15s, color .15s; }
+a.chip:hover { background:var(--dark); color:#fff; }
+span.chip { cursor:default; }
+/* Outlets covering a story closest -- the ones the snippet was actually drawn from -- get the
+   accent treatment; other covering outlets (also-carried-by) keep the neutral chip. */
+.chip-leader { background:var(--dark); color:#fff; }
+a.chip-leader:hover { background:var(--accent); color:#fff; }.carried { color:var(--muted); font-size:12px; line-height:1.5; margin:12px 0 0; }.verify { color:var(--verify); font:400 11px/1.5 "DM Mono",monospace; margin:6px 0 0; }.verify-flagged { color:var(--accent); font-weight:500; }
+.masthead-actions { display:flex; gap:10px; flex-wrap:wrap; }
+#settings-btn { background:transparent; color:var(--dark); border:1px solid var(--line); padding:13px 15px; font-size:16px; }
+#settings-btn:hover { background:var(--panel-bg); color:var(--accent); transform:translateY(-1px); }
+
+dialog#settings-dialog { width:min(480px,90vw); max-height:85vh; overflow:auto; border:1px solid var(--line); border-radius:3px; background:var(--paper); color:var(--ink); padding:0; }
+dialog#settings-dialog::backdrop { background:rgba(0,0,0,.45); }
+.settings { padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; }
+.settings-head { display:flex; justify-content:space-between; align-items:center; }
+.settings-head h2 { font:normal 28px "DM Serif Display",Georgia,serif; margin:0; }
+.settings-close { background:transparent; color:var(--muted); border:0; padding:4px 8px; font-size:20px; line-height:1; }
+.settings-close:hover { background:transparent; color:var(--accent); }
+.settings h3 { font:600 13px Manrope,sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--dark); margin:4px 0 0; }
+.settings h4 { font:500 11px "DM Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0; }
+.settings hr { border:0; border-top:1px solid var(--line); margin:0; }
+.settings-toggle { display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; }
+.settings-toggle input { accent-color:var(--accent); width:17px; height:17px; margin:0; }
+.theme-swatches { display:flex; flex-wrap:wrap; gap:8px; }
+.theme-swatch { background:var(--panel-bg); color:var(--ink); border:1px solid var(--line); font-size:12px; padding:9px 13px; }
+.theme-swatch:hover { background:var(--dark); color:#fff; }
+.theme-swatch.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+#customize-details summary { cursor:pointer; font:600 12px Manrope,sans-serif; color:var(--dark); margin-top:4px; }
+.customize-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px 12px; margin:12px 0; }
+.customize-grid label { display:grid; gap:5px; font-size:11px; color:var(--muted); text-align:center; }
+.customize-grid input[type="color"] { width:100%; height:32px; border:1px solid var(--line); padding:2px; background:var(--panel-bg); cursor:pointer; }
+.settings-row { display:flex; gap:8px; }
+.settings-row input { flex:1; }
+.settings-note { color:var(--muted); font-size:12px; line-height:1.5; margin:0; }
+.settings-error { color:var(--accent); font-size:12px; margin:0; }
+.settings input[type="text"], .settings input[type="password"], .settings input[type="number"] {
+  width:100%; border:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--panel-bg);
+  padding:8px 10px; font:14px Manrope,sans-serif; color:var(--ink);
+}
+.settings-field { display:grid; gap:5px; font-size:12px; color:var(--muted); font-weight:600; }
+.outlet-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:220px; overflow:auto; }
+.outlet-list li { display:flex; align-items:center; gap:10px; padding:7px 10px; background:var(--panel-bg); border:1px solid var(--line); }
+.outlet-list li span:first-child { flex:1; font-size:13px; }
+.outlet-tag { color:var(--muted); font:400 10px "DM Mono",monospace; }
+.outlet-list button { background:transparent; color:var(--muted); border:1px solid var(--line); padding:5px 10px; font-size:11px; }
+.outlet-list button:hover { background:var(--dark); color:#fff; border-color:var(--dark); }
+.add-outlet { display:flex; gap:6px; flex-wrap:wrap; }
+.add-outlet input { flex:1; min-width:110px; }
+#settings-save { align-self:start; }
+
+.coverage-chart { margin-top:18px; padding:16px 16px 8px; background:var(--panel-bg); border:1px solid var(--line); }
+.coverage-chart h3 { font:600 12px Manrope,sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--dark); margin:0 0 8px; }
+#coverage-svg { display:block; width:100%; height:auto; }
+.chart-axis, .chart-tick { stroke:var(--line); stroke-width:1; }
+.chart-axis-label { font:9px "DM Mono",monospace; fill:var(--muted); }
+.chart-caption { font:500 10px "DM Mono",monospace; fill:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+.chart-dot { fill:var(--accent); fill-opacity:.72; stroke:var(--panel-bg); stroke-width:2; transition:fill-opacity .1s; }
+.chart-hit { fill:transparent; cursor:pointer; }
+.coverage-tooltip { position:fixed; transform:translate(-50%,-100%); background:var(--dark); color:#fff; padding:7px 10px; font-size:12px; line-height:1.4; max-width:240px; pointer-events:none; z-index:20; border-radius:2px; }
+.coverage-tooltip strong { display:block; font-weight:700; margin-bottom:3px; }
+.coverage-tooltip span { display:block; color:#fff; opacity:.75; font:11px "DM Mono",monospace; }
+
+.site-footer { margin-top:40px; padding-top:20px; border-top:1px solid var(--line); }
+.site-footer p { color:var(--muted); font-size:11px; line-height:1.6; margin:0; max-width:820px; }
+
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--dark); color:#fff; padding:11px 20px; font:600 13px Manrope,sans-serif;
+  border-radius:3px; box-shadow:0 4px 18px rgba(0,0,0,.25); z-index:30;
+  animation:toast-in .2s ease-out;
+}
+@keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+@media (max-width:640px) { main { padding:20px 18px 55px; }.headline-row { align-items:start; flex-direction:column; } .report-meta { gap:10px 15px; }.controls { align-items:start; flex-direction:column; }.story { grid-template-columns:42px minmax(0,1fr); gap:9px; } .rank { font-size:25px; } }
+
+/* Routing profile selector, beside the refresh button in the masthead. */
+/* Routing selector. Lives inside the password-locked settings panel (it starts metered
+   runs, so it is not a masthead control) and therefore stacks like every other
+   .settings-field rather than sitting inline. This rule follows .settings-field in the
+   sheet, so it must not reintroduce a competing display value. */
+.profile-wrap[hidden] { display: none; }
+.profile-wrap select {
+  font: inherit;
+  font-size: 13px;
+  padding: 0.35rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+.profile-wrap select:disabled { opacity: 0.5; cursor: default; }
+#profile-run { margin-top: 8px; }

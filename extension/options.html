@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Newsroom Digest — Settings</title>
+  <link rel="stylesheet" href="digest.css">
+</head>
+<body class="options">
+  <h1>Settings</h1>
+
+  <label for="endpoint">Digest server</label>
+  <input id="endpoint" type="url" placeholder="http://127.0.0.1:8767" spellcheck="false">
+  <p class="hint">The site serving your digest. Point this at a different instance to read someone else's.</p>
+
+  <label for="count">Stories in the popup</label>
+  <input id="count" type="number" min="1" max="50" step="1">
+
+  <label for="newtabCount">Stories on the new tab page</label>
+  <input id="newtabCount" type="number" min="1" max="50" step="1">
+
+  <div class="row">
+    <button id="save">Save</button>
+    <button id="test" class="secondary">Test connection</button>
+  </div>
+  <p id="result" class="result" hidden></p>
+
+  <p class="hint note">
+    This extension only reads. It cannot start a pipeline run — refreshing the digest
+    stays a deliberate action on the site itself.
+  </p>
+
+  <script src="compat.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

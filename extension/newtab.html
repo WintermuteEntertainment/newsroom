@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Newsroom</title>
+  <link rel="stylesheet" href="digest.css">
+</head>
+<body class="newtab">
+  <main>
+    <header>
+      <div class="title">
+        <h1>Newsroom</h1>
+        <span id="date" class="date"></span>
+      </div>
+      <div class="tools">
+        <span id="stamp" class="stamp"></span>
+        <button id="run" class="primary" hidden>Refresh now</button>
+      <button id="reload" class="ghost" title="Re-read the digest from the server">Reload</button>
+        <a id="open-site" href="#" target="_blank" rel="noreferrer">Site</a>
+        <a id="open-options" href="#">Settings</a>
+      </div>
+    </header>
+    <p id="stale" class="stale" hidden></p>
+  <p id="run-note" class="run-note" hidden></p>
+    <div id="status" class="status">Loading…</div>
+    <ol id="stories" class="stories" hidden></ol>
+    <footer><span id="panel" class="panel"></span></footer>
+  </main>
+  <script src="compat.js"></script>
+  <script src="digest.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>

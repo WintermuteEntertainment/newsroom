@@ -1,0 +1,100 @@
+{
+  "_measured": {
+    "baseline_job": "98d99f5a",
+    "qwen_job": "69eba8f3",
+    "v4flash_jobs": [
+      "32301fc2",
+      "37572e03",
+      "52773d69"
+    ],
+    "claude_cost_per_run_usd": 0.3691,
+    "cost_after_pass_fix_usd": 0.2452,
+    "ensemble_probe_job": "95c3855c"
+  },
+  "stages": {
+    "entailment_check": {
+      "route": "local",
+      "model": "v4flash",
+      "why": "DECIDED 2026-07-30 from ensemble_probe.json (job 95c3855c, n=7 distinct genuine fabrications + 15 supported controls). v4flash: effective recall 6/7 = 86% (95% CI 50-98%) with ZERO false alarms on 15 supported cases (Youden's J = +0.86). 'Effective' because 3 of its 7 replies carried no verdict at min_tokens=512, and news_digest.bad[] flags anything that is not an explicit 'supported' -- so a null routes to repair, it does not publish. Those 3 nulls are the truncation ceiling from commit 2dc2b2a, not bad judgement; the runner now defaults --min-tokens=768, which should convert them to explicit verdicts. NOT an OR-ensemble with qwen: qwen says 'unsupported' on 82% of ALL cases (Youden's J = +0.06, near-zero discrimination), so adding it would take false alarms from 0/15 to 12/15 while recall stays 6/7 -- it contributes noise, not a second opinion. One case (case4) is a shared miss: both models called a genuine fabrication supported."
+    },
+    "snippet_writing": {
+      "route": "local",
+      "model": "qwen-finetune-q3",
+      "why": "Routed local 2026-07-30. Its 100% score is only the snippet_flags usability gate (non-empty, terminal punctuation, no dangling attribution, no meta-commentary) and says nothing about prose quality -- but the earlier reason for keeping it metered ('the one stage a reader actually reads') rested on a premise the user never gave: there are no readers. With that withdrawn there is no measured reason to pay for it."
+    },
+    "coherence_audit": {
+      "route": "local",
+      "model": "qwen-finetune-q3",
+      "why": "agreement 80% (16/20). A disagreement reorders or retitles a section; it does not publish a false claim. $0.0768/run saved for a cosmetic risk."
+    },
+    "exclusives_dedup": {
+      "route": "local",
+      "model": "qwen-finetune-q3",
+      "why": "agreement 90% (18/20). Worst case is a duplicate story shown twice or one exclusive merged away -- visible, self-correcting, not a correctness failure."
+    },
+    "fragment_merge": {
+      "route": "local",
+      "model": "v4flash",
+      "why": "agreement 78% (7/9, smallest sample). Worst case is two fragments of one story listed separately. Only $0.0026/run, routed local mainly to keep the stage exercised against the local backend. Model switched to v4flash for fully-local: at min_tokens=768 it cleared this stage's one-word verdict cleanly, and it shares the batch with entailment_check so no extra llama-swap reload is paid."
+    }
+  },
+  "_projection": {
+    "basis": "Per-stage cost apportioned from the last all-Claude run: 284 calls = $0.172 total, split by measured call share.",
+    "measured_calls_per_stage": {
+      "coherence_audit": 131,
+      "snippet_writing": 55,
+      "entailment_check": 51,
+      "exclusives_dedup": 40,
+      "fragment_merge": 7
+    },
+    "cost_per_stage_usd": {
+      "coherence_audit": 0.0793,
+      "snippet_writing": 0.0333,
+      "entailment_check": 0.0309,
+      "exclusives_dedup": 0.0242,
+      "fragment_merge": 0.0042
+    },
+    "all_claude_usd": 0.1719
+  },
+  "active_profile": "local",
+  "profiles": {
+    "local": {
+      "claude_stages": [],
+      "why": "Zero metered spend. All five stages on llama-swap. Slowest wall-clock.",
+      "projected_cost_usd": 0
+    },
+    "fast-snippets": {
+      "claude_stages": [
+        "snippet_writing"
+      ],
+      "why": "Snippet prose on Claude, everything else local. Snippet_writing is the only stage whose output is read verbatim, and local scored 100% on the malformedness gate only -- so this buys prose quality, not correctness.",
+      "projected_cost_usd": 0.0333
+    },
+    "safe-verify": {
+      "claude_stages": [
+        "entailment_check"
+      ],
+      "why": "Entailment on Claude, everything else local. Buys back the ONE residual gap: v4flash has effective recall 6/7 = 86% (95% CI 50-98%) with zero false alarms on 15 supported controls, because a missing verdict routes to repair rather than publishing. The remaining miss (case4) is a fabrication both local models called supported. Use when a run's output must not carry a fabricated claim stamped verified.",
+      "projected_cost_usd": 0.0309
+    },
+    "fast": {
+      "claude_stages": [
+        "entailment_check",
+        "snippet_writing"
+      ],
+      "why": "The pre-fully-local routing. Cheap high-volume stages stay local; the two stages where a local miss is visible in the output go to Claude.",
+      "projected_cost_usd": 0.0642
+    },
+    "claude": {
+      "claude_stages": [
+        "coherence_audit",
+        "snippet_writing",
+        "entailment_check",
+        "exclusives_dedup",
+        "fragment_merge"
+      ],
+      "why": "Everything metered. Fastest wall-clock, full cost. Escape hatch if llama-swap is down.",
+      "projected_cost_usd": 0.1719
+    }
+  }
+}

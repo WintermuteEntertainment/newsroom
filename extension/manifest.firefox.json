@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Newsroom Digest",
+  "version": "0.1.0",
+  "description": "Today's news ranked by how many independent outlets are covering each story.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Newsroom Digest"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "newsroom-digest@newsroom.local",
+      "strict_min_version": "128.0"
+    },
+    "gecko_android": {}
+  }
+}

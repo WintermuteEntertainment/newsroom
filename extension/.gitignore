@@ -1,0 +1,3 @@
+# Build output: reproducible from the source tree with `python build.py`, so committing it
+# would only create a second thing to keep in sync.
+dist/

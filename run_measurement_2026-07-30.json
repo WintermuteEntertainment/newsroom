@@ -1,0 +1,75 @@
+{
+ "run": {
+  "started": "12:59:34",
+  "killed": "14:10:53",
+  "wall_min": 71.3,
+  "fetch_done": "12:59:05",
+  "items": 1465,
+  "digest_written": false
+ },
+ "calls": {
+  "logged": 140,
+  "min_s": 6.1,
+  "median_s": 20.5,
+  "mean_s": 53.0,
+  "p90_s": 151.7,
+  "max_s": 300.3,
+  "total_model_s": 7418,
+  "over_60s": 30,
+  "over_60s_pct": 21,
+  "http_502": 12,
+  "by_outcome": {
+   "n_ok": 86,
+   "n_fail": 12,
+   "ok_s": {
+    "min": 13.5,
+    "p50": 24.8,
+    "p75": 59.4,
+    "p90": 90.6,
+    "p95": 151.7,
+    "p99": 206.8,
+    "max": 206.8,
+    "total": 3931
+   },
+   "fail_s": {
+    "total": 3086,
+    "pct_of_model_time": 44,
+    "durations": [
+     21.9,
+     62.0,
+     300.0,
+     300.0,
+     300.1,
+     300.1,
+     300.1,
+     300.1,
+     300.3,
+     300.3,
+     300.3,
+     300.3
+    ]
+   },
+   "fault_classes": {
+    "cold_start": {
+     "n": 10,
+     "positions": "0-7, 59-60",
+     "durations_s": "300.0-300.3",
+     "cause": "health check passes on port bind, before weights load",
+     "fix": "LocalHost.ensure_warm serial probe"
+    },
+    "eviction": {
+     "n": 2,
+     "positions": "96-97",
+     "durations_s": [
+      62.0,
+      21.9
+     ],
+     "cause": "model evicted mid-request to load the next model",
+     "fix": "retry_upstream, one bounded retry"
+    }
+   },
+   "note": "6.1 s min / 20.5 s median / 151.7 s p90 above are over ALL 140 logged calls including 12 failures; the by_outcome block is the split that the THROUGHPUT_MEASURED.md tables quote."
+  }
+ },
+ "expected_total_calls": 284
+}

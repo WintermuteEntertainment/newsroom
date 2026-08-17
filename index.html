@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Newsroom — The day, in proportion</title>
+    <!-- ?v= is a cache-busting version marker: bump it in the same commit as any app.js or
+         styles.css change. index.html itself is not edge-cached, so a new ?v= is a new cache
+         key that fetches the current file immediately instead of waiting out a stale copy's
+         TTL. server.py now also sends no-store, which prevents new stale entries; this marker
+         is what makes an already-cached asset recoverable without an API purge. -->
+    <link id="theme-stylesheet" rel="stylesheet" href="styles.css?v=10">
+    <script>
+      // Applied before the stylesheet paints so switching pages/reloading never flashes the
+      // previous theme first. Kept inline (not in app.js) for exactly that reason -- app.js
+      // loads at the end of body, long after first paint. Mirrors applyTheme()/
+      // applyCustomPalette() in app.js; kept in sync with those by hand since this has to run
+      // standalone, before app.js exists.
+      (function () {
+        var theme = localStorage.getItem('newsroom-theme') || 'light';
+        document.documentElement.dataset.theme = theme;
+        if (theme === 'none') {
+          document.getElementById('theme-stylesheet').disabled = true;
+        } else if (theme === 'custom') {
+          try {
+            var colors = JSON.parse(localStorage.getItem('newsroom-active-custom') || 'null');
+            if (colors) for (var k in colors) document.documentElement.style.setProperty('--' + k, colors[k]);
+          } catch (e) {}
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <div class="headline-row">
+          <div>
+            <h1>Newsroom</h1>
+            <p class="dek">Every story here ran the same test: how many independently-run newsrooms
+              covered it, out of a fixed panel of <span class="panel-count">19</span>? Rank comes from
+              that spread, not from publish time, pageviews, or any single outlet's front page.</p>
+          </div>
+          <div class="masthead-actions">
+            <a id="support-link" class="support-link" href="https://buymeacoffee.com/timdr" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+            <button id="settings-btn" type="button" aria-haspopup="dialog" title="Settings"><span aria-hidden="true">⚙</span></button>
+            <button id="refresh" type="button"><span aria-hidden="true">↻</span> Refresh report</button>
+          </div>
+        </div>
+        <div class="report-meta">
+          <span id="report-date">Loading report…</span>
+          <span id="last-refreshed" class="refreshed"></span>
+          <span><span class="panel-count">19</span>-outlet fixed panel</span>
+          <span>Sourced from whichever outlet covers each story closest</span>
+        </div>
+      </header>
+
+      <details class="about" open>
+        <summary>How this report is built</summary>
+        <div class="about-body">
+          <p>A script scans the same <span class="panel-count">19</span> outlets on a timer, keeping
+            anything published in the last <span class="maxage-count">36</span> hours. Headlines about
+            the same event are clustered together; a story's <strong>rank</strong> is how many of the
+            <span class="panel-count">19</span> outlets carried that event, not how recent or
+            prominent any single article was.</p>
+          <p>For each story, the summary paragraph is drawn from whichever panel outlet(s)
+            are covering that specific story most closely — the most real articles in the
+            cluster, not a fixed subset. Every outlet in the <span class="panel-count">19</span>-outlet
+            panel is eligible; which
+            outlet that turns out to be varies story by story, and is marked on each card. Any
+            source material pulled in this way is normalized to a neutral, matter-of-fact tone
+            regardless of how the original outlet framed it. A story can still rank highly with
+            only thin coverage from any single outlet; it just won't have much summary, only a
+            coverage count.</p>
+          <p>Before anything is ranked, an AI pass audits each cluster so that, say, a
+            company's stock move and an unrelated lawsuit against that same company don't get
+            lumped into one inflated "story." After a summary is written, it's checked back
+            against the source articles for claims that aren't actually in them (shown below
+            as <strong>entailment</strong>), and separately screened for AI-writing artifacts
+            like a sentence trailing off mid-attribution (<strong>snippet form</strong>). Items
+            tagged anything other than <em>clean</em> / <em>ok</em> passed publication anyway
+            but are flagged so you can judge the summary yourself rather than take it on
+            faith.</p>
+          <p>Google News is used only as a delivery mechanism for outlets that block direct
+            scraping — every article is still credited to the publisher that actually wrote it,
+            never to "Google News" as if it were a source.</p>
+        </div>
+      </details>
+
+      <section id="scan-debug" class="scan-debug" hidden aria-label="Run diagnostics"></section>
+
+      <section id="coverage-chart" class="coverage-chart" hidden aria-label="Coverage breadth vs. article volume">
+        <h3>Coverage breadth vs. article volume, this report</h3>
+        <svg id="coverage-svg" viewBox="0 0 560 220" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter plot: each dot is one story, positioned by how many panel outlets covered it and how many total articles exist about it."></svg>
+      </section>
+      <div id="coverage-tooltip" class="coverage-tooltip" hidden></div>
+
+      <section class="controls" aria-label="Digest controls">
+        <label class="search"><span>Search stories</span><input id="search" type="search" placeholder="Try “wildfires”"></label>
+        <p id="result-count" aria-live="polite"></p>
+      </section>
+
+      <section id="notice" class="notice" hidden role="status"></section>
+      <section id="stories" class="stories" aria-live="polite"></section>
+
+      <footer class="site-footer">
+        <p>Newsroom aggregates publicly available headlines from third-party news outlets and
+          uses AI to summarize them for informational purposes only — summaries may not
+          perfectly reflect the source reporting, so verify anything important against the
+          linked original article. This site is not affiliated with, endorsed by, or sponsored
+          by any outlet listed here; all reporting, images, and headlines remain the property
+          of their original publishers. Provided as-is, with no warranty of accuracy,
+          completeness, or availability.</p>
+      </footer>
+    </main>
+
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" class="settings">
+        <div class="settings-head">
+          <h2>Settings</h2>
+          <button type="submit" class="settings-close" aria-label="Close">×</button>
+        </div>
+
+        <section class="settings-section">
+          <h3>Appearance</h3>
+          <div class="theme-swatches">
+            <button type="button" class="theme-swatch" data-theme-id="light">Editorial</button>
+            <button type="button" class="theme-swatch" data-theme-id="dark">Dark</button>
+            <button type="button" class="theme-swatch" data-theme-id="slate">Slate</button>
+            <button type="button" class="theme-swatch" data-theme-id="sepia">Sepia</button>
+            <button type="button" class="theme-swatch" data-theme-id="none">Style-less</button>
+          </div>
+
+          <details id="customize-details">
+            <summary>Customize</summary>
+            <div class="customize-grid">
+              <label>Background <input type="color" id="custom-paper"></label>
+              <label>Text <input type="color" id="custom-ink"></label>
+              <label>Accent <input type="color" id="custom-accent"></label>
+              <label>Emphasis <input type="color" id="custom-dark"></label>
+              <label>Muted <input type="color" id="custom-muted"></label>
+              <label>Lines <input type="color" id="custom-line"></label>
+            </div>
+            <div class="settings-row">
+              <input type="text" id="custom-theme-name" placeholder="Name this theme">
+              <button type="button" id="save-theme-btn">Save</button>
+            </div>
+            <ul id="saved-themes-list" class="outlet-list"></ul>
+          </details>
+        </section>
+
+        <hr>
+
+        <section id="settings-locked">
+          <p class="settings-note">Panel and pipeline settings are password-protected.</p>
+          <div class="settings-row">
+            <input type="password" id="settings-password" placeholder="Password" autocomplete="off">
+            <button type="button" id="settings-unlock">Unlock</button>
+          </div>
+          <p id="settings-lock-error" class="settings-error" hidden></p>
+        </section>
+
+        <section id="settings-unlocked" hidden>
+          <h3>Outlet panel</h3>
+          <ul id="outlet-list" class="outlet-list"></ul>
+
+          <div id="removed-defaults-wrap" hidden>
+            <h4>Removed</h4>
+            <ul id="removed-list" class="outlet-list"></ul>
+          </div>
+
+          <div class="add-outlet">
+            <input type="text" id="add-outlet-name" placeholder="Outlet name, e.g. Axios">
+            <input type="text" id="add-outlet-domain" placeholder="Domain, e.g. axios.com">
+            <button type="button" id="add-outlet-btn">Add</button>
+          </div>
+
+          <h3>Pipeline</h3>
+          <label class="settings-field">Model
+            <input type="text" id="setting-model">
+          </label>
+          <label class="settings-field">Stories per report
+            <input type="number" id="setting-topn" min="1" max="100">
+          </label>
+          <label class="settings-field">Freshness window (hours)
+            <input type="number" id="setting-maxage" min="1" max="168">
+          </label>
+
+          <p class="settings-note">Changes apply on the <em>next</em> refresh, not the report currently on screen.</p>
+          <p id="settings-save-error" class="settings-error" hidden></p>
+          <button type="button" id="settings-save">Save settings</button>
+
+          <h3>Routing</h3>
+          <label id="profile-wrap" class="profile-wrap settings-field" hidden>Run on
+            <select id="profile" title="Which stages run on the metered API instead of the local GPU"></select>
+          </label>
+          <button type="button" id="profile-run">Run this profile now</button>
+          <p class="settings-note">Metered profiles bill the API, so they can only be
+            started from here, with the password. The Refresh button on the page runs the
+            configured default routing.</p>
+        </section>
+      </form>
+    </dialog>
+    <template id="story-template">
+      <article class="story">
+        <div class="rank" aria-label="Story rank"></div>
+        <div class="story-content">
+          <div class="story-topline"><span class="coverage"></span><span class="articles"></span></div>
+          <h2><a class="story-link" target="_blank" rel="noopener"></a></h2>
+          <div class="meter" aria-hidden="true"><i></i></div>
+          <p class="snippet"></p>
+          <div class="sources"><span class="source-label">Covered by</span><div class="voice-sources"></div></div>
+          <p class="carried"></p>
+          <p class="verify"></p>
+        </div>
+      </article>
+    </template>
+    <script src="app.js?v=15"></script>
+  </body>
+</html>

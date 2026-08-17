@@ -1,0 +1,123 @@
+:root {
+  --bg: #12131a;
+  --panel: #1a1c25;
+  --ink: #e8e9ee;
+  --dim: #9a9db0;
+  --line: #2a2d3a;
+  --accent: #7aa2f7;
+  --warn: #e0af68;
+  --bad: #f7768e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1 { font-size: 15px; margin: 0; letter-spacing: 0.02em; }
+
+header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line);
+}
+.title { display: flex; align-items: baseline; gap: 10px; }
+.tools { display: flex; align-items: baseline; gap: 12px; }
+.date, .stamp { color: var(--dim); font-size: 12px; }
+
+a { color: var(--accent); text-decoration: none; font-size: 12px; }
+a:hover { text-decoration: underline; }
+
+button.ghost {
+  background: none; border: 1px solid var(--line); color: var(--dim);
+  border-radius: 5px; padding: 2px 8px; font-size: 12px; cursor: pointer;
+}
+button.ghost:hover { color: var(--ink); border-color: var(--dim); }
+
+.stale {
+  margin: 0; padding: 8px 16px; background: rgba(224,175,104,0.12);
+  border-bottom: 1px solid var(--line); color: var(--warn); font-size: 12px;
+}
+
+.status { padding: 20px 16px; color: var(--dim); }
+.status.error { color: var(--bad); }
+
+.stories { list-style: none; margin: 0; padding: 4px 0; }
+.story {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.story:last-child { border-bottom: none; }
+.rank { color: var(--dim); font-variant-numeric: tabular-nums; min-width: 1.6em; text-align: right; }
+.body { min-width: 0; }
+
+.headline { display: block; font-size: 14px; font-weight: 550; color: var(--ink); line-height: 1.35; }
+.headline:hover { color: var(--accent); text-decoration: none; }
+.snippet { margin: 5px 0 0; color: #c3c6d4; }
+
+.meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--dim); }
+
+/* Per-outlet links. Same shape as the website's .chip (pill, 11px, bold, no underline);
+   the site's leader treatment -- filled, for the outlets the snippet was drawn from --
+   maps onto the accent here since this palette has no --dark. */
+.chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  background: var(--panel); color: var(--dim); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700;
+  text-decoration: none; display: inline-block; line-height: 1.5;
+  transition: background .15s, color .15s, border-color .15s;
+}
+a.chip:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+span.chip { cursor: default; }
+.chip-leader { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+a.chip-leader:hover { background: var(--ink); border-color: var(--ink); }
+/* The overflow count is a label, never a link -- deliberately flat so it does not read as one. */
+.chip-more { background: transparent; border-style: dashed; font-weight: 550; }
+.count { color: var(--accent); }
+.flag { color: var(--warn); }
+
+footer {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 10px 16px; border-top: 1px solid var(--line); color: var(--dim); font-size: 12px;
+}
+
+/* The popup is a fixed narrow column; the new tab centres a readable measure. */
+body.popup { width: 520px; max-height: 600px; overflow-y: auto; }
+body.newtab main { max-width: 760px; margin: 0 auto; padding: 24px 0 48px; }
+body.newtab .story { padding: 14px 16px; }
+body.newtab .headline { font-size: 15px; }
+
+body.options { max-width: 520px; margin: 0 auto; padding: 28px 20px; }
+body.options h1 { margin-bottom: 18px; font-size: 17px; }
+body.options label { display: block; margin: 16px 0 5px; font-size: 12px; color: var(--dim); }
+body.options input {
+  width: 100%; padding: 8px 10px; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; font: inherit;
+}
+.hint { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.note { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); }
+.row { display: flex; gap: 10px; margin-top: 20px; }
+body.options button {
+  padding: 8px 16px; border-radius: 6px; border: 1px solid var(--accent);
+  background: var(--accent); color: #12131a; font: inherit; font-weight: 550; cursor: pointer;
+}
+body.options button.secondary { background: none; color: var(--accent); }
+.result { margin-top: 14px; font-size: 12px; }
+.result.ok { color: var(--accent); }
+.result.error { color: var(--bad); }
+
+button.primary {
+  background: var(--accent); border: 1px solid var(--accent); color: #12131a;
+  border-radius: 5px; padding: 3px 10px; font: inherit; font-size: 12px;
+  font-weight: 550; cursor: pointer;
+}
+button.primary:disabled { opacity: 0.55; cursor: default; }
+.run-note {
+  margin: 0; padding: 8px 16px; border-bottom: 1px solid var(--line);
+  color: var(--dim); font-size: 12px;
+}
+.run-note.ok { color: var(--accent); }
+.run-note.error { color: var(--bad); }

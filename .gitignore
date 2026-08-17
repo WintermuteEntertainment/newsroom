@@ -1,0 +1,39 @@
+__pycache__/
+*.pyc
+.venv/
+raw_headlines_*.json
+news_digest_*.txt
+news_digest_*.csv
+current.csv
+news_digest_latest.csv
+outlets_config.json
+usage_*.json
+*.tmp
+# Benchmark inputs/outputs: the corpus is ~1MB of captured Claude responses, and the
+# bench results are per-machine measurements, not source. routing.json IS committed --
+# it is the decision those measurements produced.
+calls_corpus.jsonl
+calls_*.jsonl
+bench_local*.json
+v4flash_entail_negatives.json
+routed_run.log
+# Transfer artifact from the bundle-based deploy route, not project content.
+*.bundle
+
+# Local secrets and config -- .env.example is the tracked template.
+.env
+extension/newsroom-digest-source.zip
+extension/SOURCES.sha256
+nodejs_bin-*.whl
+
+# The live settings password. Read by server.py at startup; must never be committed.
+config_password.txt
+
+# Per-run pipeline logs written by server.py run_refresh(). One per refresh, and they
+# carry the output-contract report -- useful locally, noise in history.
+pipeline_run_*.log
+
+# Visitor access log written by server.py: contains IPs and user-agents (personal
+# data), and is per-machine runtime output, not source.
+access.log
+access.log.*
