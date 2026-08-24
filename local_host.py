@@ -28,9 +28,11 @@ degrading the digest.
 from __future__ import annotations
 
 import json
+import os
 import time
 import re
 import threading
+from pathlib import Path
 import urllib.error
 import urllib.request
 from collections import Counter
@@ -145,6 +147,19 @@ class LocalHost:
         self.retry_upstream = retry_upstream
         self.retry_backoff = retry_backoff
         self._lock = threading.Lock()
+        # Optional call capture. OFF unless NEWSROOM_RECORD_LOCAL names a path, so the
+        # default run is byte-for-byte what it was.
+        #
+        # Deliberately a SEPARATE file from calls_corpus.jsonl. That corpus is ground
+        # truth -- every row's "reference" is what Claude answered, which is what makes
+        # it usable as a label when probing a local model. Rows captured here are the
+        # local model's own answers; appending them to the same file would silently
+        # turn a model's output into its own grading key. Each row carries
+        # source="local" and the model name so the two can never be confused after
+        # the fact either.
+        _rec = os.environ.get("NEWSROOM_RECORD_LOCAL", "").strip()
+        self.record_path = Path(_rec) if _rec else None
+        self._record_lock = threading.Lock()
 
     def reasoning_model(self) -> str:
         return self.model
@@ -265,6 +280,23 @@ class LocalHost:
         finish = (choices[0].get("finish_reason") if choices else None)
         text = strip_reasoning(raw)
         out = {"text": text, "raw": raw}
+        if self.record_path is not None:
+            # Capture the INPUTS above all: real production pairs are the scarce thing
+            # (the ground-truth corpus holds only 9 fragment_merge cases). "reference"
+            # is this model's answer, NOT a label -- see the note in __init__.
+            row = {"stage": request.get("stage") or "other",
+                   "system": system_text, "prompt": request["prompt"],
+                   "max_tokens": want, "reference": text,
+                   "source": "local", "model": payload["model"],
+                   "finish_reason": finish}
+            try:
+                line = json.dumps(row, ensure_ascii=False)
+                with self._record_lock:      # calls run threaded; one writer at a time
+                    with self.record_path.open("a", encoding="utf-8") as fh:
+                        fh.write(line + "\n")
+            except Exception:
+                # Capture is diagnostics. A failure to write must never take down a run.
+                pass
         if finish == "length" and not text:
             # Ran out of budget while still thinking: no answer was produced. Say so rather
             # than returning a truncated fragment that a parser might half-read.

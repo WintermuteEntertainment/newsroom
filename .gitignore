@@ -57,3 +57,10 @@ merge_probe*.json
 *-bak
 *.predeploy-*
 _attic/
+
+# Local call capture written when NEWSROOM_RECORD_LOCAL is set (see local_host.py).
+# Runtime measurement data, grows with every run, and carries article text. Kept
+# OUT of calls_corpus.jsonl on purpose: that corpus is ground truth because every
+# "reference" in it is Claude's answer, and these rows are the local model's own.
+local_calls.jsonl
+local_calls*.jsonl
