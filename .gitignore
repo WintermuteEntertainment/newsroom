@@ -37,3 +37,21 @@ pipeline_run_*.log
 # data), and is per-machine runtime output, not source.
 access.log
 access.log.*
+
+# One-off model-comparison probes and their results. These measure one machine's
+# hardware against a corpus that is itself gitignored, so they are not reproducible
+# from a clean clone and do not belong in history. What they produced -- the routing
+# decision and the numbers behind it -- is recorded in routing.json's "why" fields.
+entail_probe_model.py
+entail_prompt_variants.py
+entail_probe_*.json
+entail_variants_*.json
+ensemble_probe.json
+
+# Superseded config backups and scratch output. Kept out of history because git
+# already holds every prior routing.json; a stale .bak beside the live file is how
+# the wrong one gets edited.
+*.bak_*
+*-bak
+*.predeploy-*
+_attic/
