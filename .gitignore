@@ -47,6 +47,8 @@ entail_prompt_variants.py
 entail_probe_*.json
 entail_variants_*.json
 ensemble_probe.json
+merge_probe_model.py
+merge_probe*.json
 
 # Superseded config backups and scratch output. Kept out of history because git
 # already holds every prior routing.json; a stale .bak beside the live file is how
