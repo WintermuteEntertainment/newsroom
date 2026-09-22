@@ -306,6 +306,7 @@ const addOutletDomain = document.querySelector('#add-outlet-domain');
 const settingModel = document.querySelector('#setting-model');
 const settingTopN = document.querySelector('#setting-topn');
 const settingMaxAge = document.querySelector('#setting-maxage');
+const settingRefreshHours = document.querySelector('#setting-refresh-hours');
 
 // --- Themes. Built-in themes (light/dark/slate/sepia) are full hand-picked palettes
 // declared in styles.css; 'none' just turns the stylesheet off. 'custom' is the odd one out:
@@ -471,6 +472,11 @@ async function loadSettingsForm() {
   settingModel.value = data.model || '';
   settingTopN.value = data.top_n || '';
   settingMaxAge.value = data.max_age_hours || '';
+  // Not `|| ''`: 0 means the schedule is off, which is a real saved value. Falling
+  // back to blank there would show the off state as though nothing had been set.
+  settingRefreshHours.value =
+    data.auto_refresh_hours === null || data.auto_refresh_hours === undefined
+      ? '' : data.auto_refresh_hours;
   renderOutlets();
   settingsLoaded = true;
 }
@@ -580,6 +586,10 @@ document.querySelector('#settings-save').addEventListener('click', async () => {
     model: settingModel.value.trim(),
     top_n: Number(settingTopN.value) || null,
     max_age_hours: Number(settingMaxAge.value) || null,
+    // `|| null` would convert a deliberate 0 into "unset", and the server would
+    // fall back to the default interval -- switching the schedule back on by itself.
+    auto_refresh_hours:
+      settingRefreshHours.value === '' ? null : Number(settingRefreshHours.value),
   };
   try {
     const response = await fetch('/api/config', { method: 'POST', body: JSON.stringify(body) });

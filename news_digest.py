@@ -375,7 +375,11 @@ def validate_config(cfg: dict) -> str | None:
         taken_domains.add(domain)
     if len(resolve_outlets(cfg)["panel"]) < 3:
         return "The panel needs at least 3 outlets left for prevalence ranking to mean anything."
-    for key, (lo, hi) in {"top_n": (1, 100), "max_age_hours": (1, 168)}.items():
+    # auto_refresh_hours allows 0, unlike the others: 0 is the OFF switch for the
+    # schedule, a value chosen on purpose. None still means "not set, fall back to the
+    # env default" -- the two are different states and must stay distinguishable.
+    for key, (lo, hi) in {"top_n": (1, 100), "max_age_hours": (1, 168),
+                          "auto_refresh_hours": (0, 168)}.items():
         if cfg.get(key) is not None:
             try:
                 v = float(cfg[key])

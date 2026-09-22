@@ -278,6 +278,9 @@ def config_payload() -> dict:
         "model": cfg.get("model") or os.environ.get("NEWSROOM_MODEL") or "claude-haiku-4-5-20251001",
         "top_n": cfg.get("top_n") or 18,
         "max_age_hours": cfg.get("max_age_hours") or news_digest.DEFAULT_MAX_AGE_HOURS,
+        # Resolved, not raw: the panel should show the interval actually in force,
+        # including the env default when nothing has been saved yet.
+        "auto_refresh_hours": effective_auto_refresh_hours(),
     }
 
 
@@ -464,6 +467,30 @@ def digest_age_seconds() -> float | None:
         return None
 
 
+def effective_auto_refresh_hours() -> float:
+    """How often the schedule should fire, re-read from the config file on every call.
+
+    Deliberately NOT captured at import. Reading it per-check is what lets the interval be
+    changed (or the schedule switched off) from the settings panel and take effect on the
+    next check instead of at the next restart.
+
+    NEWSROOM_AUTO_REFRESH_HOURS stays the default for an install that has never set one; a
+    value saved in the config overrides it. 0 means off, and is a real saved value rather
+    than "unset" -- those two have to stay distinguishable, or switching the schedule off
+    would read back as "use the default" and quietly turn itself on again.
+    """
+    value = news_digest.load_config().get("auto_refresh_hours")
+    if value is None:
+        return AUTO_REFRESH_HOURS
+    try:
+        return max(0.0, float(value))
+    except (TypeError, ValueError):
+        # A corrupt value must neither crash the loop nor silently disable the schedule.
+        # Falling back to the configured default keeps the site refreshing while the bad
+        # value gets noticed and fixed.
+        return AUTO_REFRESH_HOURS
+
+
 def auto_refresh_due(age_seconds: float | None, interval_hours: float) -> bool:
     """Whether a scheduled refresh should start now.
 
@@ -483,7 +510,7 @@ def auto_refresh_tick() -> str:
     """One scheduled check. Returns the decision it made, for logging and for tests."""
     if not REFRESH_COMMAND:
         return "not_configured"
-    if not auto_refresh_due(digest_age_seconds(), AUTO_REFRESH_HOURS):
+    if not auto_refresh_due(digest_age_seconds(), effective_auto_refresh_hours()):
         return "not_due"
     # NEVER let the schedule spend money. An unattended timer on a metered profile would
     # bill every couple of hours with nobody watching. The manual path requires a password
@@ -633,7 +660,8 @@ class NewsroomHandler(SimpleHTTPRequestHandler):
         cfg = {"removed_outlets": body.get("removed_outlets") or [],
                "added_outlets": body.get("added_outlets") or [],
                "model": (body.get("model") or "").strip() or None,
-               "top_n": body.get("top_n"), "max_age_hours": body.get("max_age_hours")}
+               "top_n": body.get("top_n"), "max_age_hours": body.get("max_age_hours"),
+               "auto_refresh_hours": body.get("auto_refresh_hours")}
         error = news_digest.validate_config(cfg)
         if error:
             return self.send_json({"error": error}, HTTPStatus.BAD_REQUEST)
@@ -665,12 +693,19 @@ if __name__ == "__main__":
     print("Newsroom running at http://127.0.0.1:8767")
     if not REFRESH_COMMAND:
         print("Refresh is disabled until NEWSROOM_REFRESH_COMMAND is set.")
-    elif AUTO_REFRESH_HOURS > 0:
-        print(f"Auto-refresh: every {AUTO_REFRESH_HOURS:g}h if the digest is older than that "
-              f"(first check in {AUTO_REFRESH_GRACE_SECONDS / 60:g} min). "
-              f"Set NEWSROOM_AUTO_REFRESH_HOURS=0 to disable.")
+    else:
+        # The checker ALWAYS starts; whether it does anything is decided at each check from
+        # the saved interval. It used to start only when the interval was above zero at boot,
+        # which made the off switch one-way: turning the schedule back on in the settings
+        # panel did nothing until someone restarted the server, because the thread that
+        # would have noticed the change was never started in the first place.
+        hours = effective_auto_refresh_hours()
+        if hours > 0:
+            print(f"Auto-refresh: every {hours:g}h if the digest is older than that "
+                  f"(first check in {AUTO_REFRESH_GRACE_SECONDS / 60:g} min). "
+                  f"Change or disable it in the settings panel.")
+        else:
+            print("Auto-refresh is off. Turn it on in the settings panel.")
         # Daemon so it cannot keep a shutting-down server alive.
         threading.Thread(target=auto_refresh_loop, daemon=True).start()
-    else:
-        print("Auto-refresh disabled (NEWSROOM_AUTO_REFRESH_HOURS=0).")
     ThreadingHTTPServer(("127.0.0.1", 8767), NewsroomHandler).serve_forever()
